@@ -10,19 +10,14 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ResourceSliceHandler implements the Handler interface for ResourceSlice
-type ResourceSliceHandler struct {
-	client client.Client
-}
+type ResourceSliceHandler struct {}
 
 // NewResourceSliceHandler creates a new ResourceSliceHandler
-func NewResourceSliceHandler(client client.Client, className string) handler.Handler {
-	return &ResourceSliceHandler{
-		client: client,
-	}
+func NewResourceSliceHandler() handler.Handler {
+	return &ResourceSliceHandler{}
 }
 
 // Handle processes a ResourceSlice

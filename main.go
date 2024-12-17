@@ -66,7 +66,7 @@ func main() {
 	}
 
 	// Create the handler
-	rsHandler := examplehandler.NewResourceSliceHandler(mgr.GetClient(), className)
+	rsHandler := examplehandler.NewResourceSliceHandler()
 
 	if err = controller.NewResourceSliceReconciler(
 		mgr.GetClient(),
