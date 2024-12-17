@@ -20,8 +20,8 @@ The controller manages the ResourceSlice status updates and conditions, while th
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/liqotech/resource-slice-classes.git
-   cd resource-slice-classes
+   git clone https://github.com/liqotech/resource-slice-class-controller-template.git
+   cd resource-slice-class-controller-template
    ```
 
 2. Build the controller:
@@ -117,6 +117,7 @@ The handler interface is defined in `pkg/resourceslice/handler/interface.go`:
 type Handler interface {
     Handle(ctx context.Context, resourceSlice *authv1beta1.ResourceSlice) (ctrl.Result, error)
 }
+```
 
 Your handler implementation should:
 1. Implement your resource allocation strategy
