@@ -15,7 +15,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	examplehandler "github.com/liqotech/resource-slice-classes/example/resourceslice"
-	"github.com/liqotech/resource-slice-classes/internal/controller"
+	"github.com/liqotech/resource-slice-classes/pkg/controller"
 )
 
 var (
