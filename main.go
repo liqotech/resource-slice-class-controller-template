@@ -1,21 +1,21 @@
+// Package main contains an an example main to setup and run a controller handling a ResourceSlice class
 package main
 
 import (
 	"flag"
 	"os"
 
-	auth1beta1 "github.com/liqotech/liqo/apis/authentication/v1beta1"
+	authv1beta1 "github.com/liqotech/liqo/apis/authentication/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	examplehandler "github.com/liqotech/resource-slice-classes/example/resourceslice"
-	"github.com/liqotech/resource-slice-classes/pkg/controller"
+	examplehandler "github.com/liqotech/resource-slice-class-controller-template/example/resourceslice"
+	"github.com/liqotech/resource-slice-class-controller-template/pkg/controller"
 )
 
 var (
@@ -24,7 +24,7 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(auth1beta1.AddToScheme(scheme))
+	utilruntime.Must(authv1beta1.AddToScheme(scheme))
 	// Add custom resource scheme here when you have CRDs
 	//+kubebuilder:scaffold:scheme
 }
@@ -46,7 +46,7 @@ func main() {
 	flag.Parse()
 
 	if className == "" {
-		klog.ErrorS(nil, "class-name is required")
+		klog.Error("class-name is required")
 		os.Exit(1)
 	}
 
@@ -61,12 +61,12 @@ func main() {
 		LeaderElectionID:       "resource-slice-classes-leader-election",
 	})
 	if err != nil {
-		klog.ErrorS(err, "unable to start manager")
+		klog.Errorf("unable to start manager: %v", err)
 		os.Exit(1)
 	}
 
 	// Create the handler
-	rsHandler := examplehandler.NewResourceSliceHandler()
+	rsHandler := examplehandler.NewHandler()
 
 	if err = controller.NewResourceSliceReconciler(
 		mgr.GetClient(),
@@ -75,22 +75,22 @@ func main() {
 		className,
 		rsHandler,
 	).SetupWithManager(mgr); err != nil {
-		klog.ErrorS(err, "unable to create controller", "controller", "ResourceSlice")
+		klog.Errorf("unable to setup controller: %v", err)
 		os.Exit(1)
 	}
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		klog.ErrorS(err, "unable to set up health check")
+		klog.Errorf("unable to set up health check: %v", err)
 		os.Exit(1)
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		klog.ErrorS(err, "unable to set up ready check")
+		klog.Errorf("unable to set up ready check: %v", err)
 		os.Exit(1)
 	}
 
 	klog.Info("starting manager")
 	if err := mgr.Start(ctx); err != nil {
-		klog.ErrorS(err, "problem running manager")
+		klog.Errorf("unable to start controller: %v", err)
 		os.Exit(1)
 	}
 }

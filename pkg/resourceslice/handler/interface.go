@@ -1,3 +1,4 @@
+// Package handler contains the interface for an handler that manages ResourceSlices resources.
 package handler
 
 import (
@@ -7,7 +8,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-// Handler defines the interface for handling ResourceSlice operations
+// Handler defines the interface for handling ResourceSlice operations.
 type Handler interface {
 	// Handle processes a ResourceSlice and returns a reconciliation result
 	Handle(ctx context.Context, resourceSlice *authv1beta1.ResourceSlice) (ctrl.Result, error)
