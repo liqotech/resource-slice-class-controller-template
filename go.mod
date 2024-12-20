@@ -1,4 +1,4 @@
-module github.com/liqotech/resource-slice-classes
+module github.com/liqotech/resource-slice-class-controller-template
 
 go 1.23.3
 

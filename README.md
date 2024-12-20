@@ -19,12 +19,14 @@ The controller manages the ResourceSlice status updates and conditions, while th
 ## Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/liqotech/resource-slice-class-controller-template.git
    cd resource-slice-class-controller-template
    ```
 
 2. Build the controller:
+
    ```bash
    go build -o bin/manager main.go
    ```
@@ -40,6 +42,7 @@ The controller requires a class name to be specified:
 ```
 
 Additional flags:
+
 - `--metrics-bind-address`: The address to bind the metrics endpoint (default: ":8080")
 - `--health-probe-bind-address`: The address to bind the health probe endpoint (default: ":8081")
 - `--leader-elect`: Enable leader election for controller manager
@@ -47,6 +50,7 @@ Additional flags:
 ### Example Implementation
 
 The repository includes an example handler implementation in `example/resourceslice/handler.go` that:
+
 - Generates CPU resources between 1 and 10 cores
 - Generates Memory resources between 1 and 5 GB
 - Allocates 110 pods
@@ -58,56 +62,56 @@ To implement a custom handler for your ResourceSlice class:
 
 1. Create a new type that implements the `handler.Handler` interface:
 
-```go
-package myhandler
+    ```go
+    package myhandler
 
-import (
-    "context"
-    authv1beta1 "github.com/liqotech/liqo/apis/authentication/v1beta1"
-    "github.com/liqotech/resource-slice-classes/pkg/resourceslice/handler"
-    ctrl "sigs.k8s.io/controller-runtime"
-)
+    import (
+        "context"
+        authv1beta1 "github.com/liqotech/liqo/apis/authentication/v1beta1"
+        rshandler "github.com/liqotech/resource-slice-class-controller-template/pkg/resourceslice/handler"
+        ctrl "sigs.k8s.io/controller-runtime"
+    )
 
-type MyHandler struct {}
+    type MyHandler struct {}
 
-func NewMyHandler() handler.Handler {
-    return &MyHandler{}
-}
+    func NewMyHandler() rshandler.Handler {
+        return &MyHandler{}
+    }
 
-func (h *MyHandler) Handle(ctx context.Context, resourceSlice *authv1beta1.ResourceSlice) (ctrl.Result, error) {
-    // Implement your custom resource allocation logic here
-    // Update resourceSlice.Status.Resources with your allocated resources
-    
-    return ctrl.Result{}, nil
-}
-```
+    func (h *MyHandler) Handle(ctx context.Context, resourceSlice *authv1beta1.ResourceSlice) (ctrl.Result, error) {
+        // Implement your custom resource allocation logic here
+        // Update resourceSlice.Status.Resources with your allocated resources
+        
+        return ctrl.Result{}, nil
+    }
+    ```
 
 2. Update `main.go` to use your custom handler:
 
-```go
-import (
-    "github.com/your-org/your-module/pkg/myhandler"
-)
+    ```go
+    import (
+        "github.com/your-org/your-module/pkg/myhandler"
+    )
 
-func main() {
-    // ...
-    
-    // Create your custom handler
-    customHandler := myhandler.NewMyHandler()
-    
-    if err = controller.NewResourceSliceReconciler(
-        mgr.GetClient(),
-        mgr.GetScheme(),
-        mgr.GetEventRecorderFor("resource-slice-controller"),
-        className,
-        customHandler,
-    ).SetupWithManager(mgr); err != nil {
+    func main() {
+        // ...
+        
+        // Create your custom handler
+        customHandler := myhandler.NewMyHandler()
+        
+        if err = controller.NewResourceSliceReconciler(
+            mgr.GetClient(),
+            mgr.GetScheme(),
+            mgr.GetEventRecorderFor("resource-slice-controller"),
+            className,
+            customHandler,
+        ).SetupWithManager(mgr); err != nil {
+            // ...
+        }
+        
         // ...
     }
-    
-    // ...
-}
-```
+    ```
 
 ## Handler Interface
 
@@ -120,11 +124,13 @@ type Handler interface {
 ```
 
 Your handler implementation should:
+
 1. Implement your resource allocation strategy
 2. Set the allocated resources in `resourceSlice.Status.Resources`
 3. Return appropriate reconciliation results and errors
 
 Note: The controller, not the handler, is responsible for:
+
 - Updating the ResourceSlice status in the API server
 - Managing ResourceSlice conditions
 - Recording events
@@ -150,7 +156,3 @@ Note: The controller, not the handler, is responsible for:
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
