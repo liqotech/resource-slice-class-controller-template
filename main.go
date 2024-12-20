@@ -1,4 +1,4 @@
-// Package main contains an an example main to setup and run a controller handling a ResourceSlice class
+// Package main contains an an example main to setup and run a controller handling a ResourceSlice class.
 package main
 
 import (
@@ -6,6 +6,8 @@ import (
 	"os"
 
 	authv1beta1 "github.com/liqotech/liqo/apis/authentication/v1beta1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -14,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	examplehandler "github.com/liqotech/resource-slice-class-controller-template/example/resourceslice"
+	cappedresources "github.com/liqotech/resource-slice-class-controller-template/examples/cappedresources"
 	"github.com/liqotech/resource-slice-class-controller-template/pkg/controller"
 )
 
@@ -66,7 +68,18 @@ func main() {
 	}
 
 	// Create the handler
-	rsHandler := examplehandler.NewHandler()
+	cappedQuantities := map[corev1.ResourceName]string{
+		corev1.ResourceCPU:              "4",
+		corev1.ResourceMemory:           "8Gi",
+		corev1.ResourcePods:             "110",
+		corev1.ResourceEphemeralStorage: "20Gi",
+	}
+	parsedQuantities, err := parseQuantities(cappedQuantities)
+	if err != nil {
+		klog.Errorf("unable to parse quantities: %v", err)
+		os.Exit(1)
+	}
+	rsHandler := cappedresources.NewHandler(parsedQuantities)
 
 	if err = controller.NewResourceSliceReconciler(
 		mgr.GetClient(),
@@ -93,4 +106,16 @@ func main() {
 		klog.Errorf("unable to start controller: %v", err)
 		os.Exit(1)
 	}
+}
+
+func parseQuantities(quantities map[corev1.ResourceName]string) (corev1.ResourceList, error) {
+	resources := corev1.ResourceList{}
+	for name, quantity := range quantities {
+		qnt, err := resource.ParseQuantity(quantity)
+		if err != nil {
+			return nil, err
+		}
+		resources[name] = qnt
+	}
+	return resources, nil
 }
