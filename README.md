@@ -49,12 +49,7 @@ Additional flags:
 
 ### Example Implementation
 
-The repository includes an example handler implementation in `example/resourceslice/handler.go` that:
-
-- Generates CPU resources between 1 and 10 cores
-- Generates Memory resources between 1 and 5 GB
-- Allocates 110 pods
-- Uses a deterministic hash of the ResourceSlice name for consistent resource allocation
+The repository includes an example handler implementation in `examples/cappedresources/handler.go`, that accepts every resource request but caps the amount of resources the resource slice can use if they exceed the configured thresholds.
 
 ## Creating Custom Handlers
 

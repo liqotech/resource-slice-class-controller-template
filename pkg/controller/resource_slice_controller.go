@@ -4,13 +4,17 @@ package controller
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	authv1beta1 "github.com/liqotech/liqo/apis/authentication/v1beta1"
+	"github.com/liqotech/liqo/pkg/consts"
 	"github.com/liqotech/liqo/pkg/liqo-controller-manager/authentication"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -40,8 +44,16 @@ func NewResourceSliceReconciler(cl client.Client, scheme *runtime.Scheme, record
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ResourceSliceReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// generate the predicate to filter just the ResourceSlices that are replicated
+	// (i.e., the ones for which we have the role of provider)
+	replicatedResSliceFilter, err := predicate.LabelSelectorPredicate(replicatedResourcesLabelSelector())
+	if err != nil {
+		klog.Error(err)
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&authv1beta1.ResourceSlice{}).
+		For(&authv1beta1.ResourceSlice{}, builder.WithPredicates(replicatedResSliceFilter)).
 		WithEventFilter(predicate.NewPredicateFuncs(func(obj client.Object) bool {
 			resourceSlice, ok := obj.(*authv1beta1.ResourceSlice)
 			if !ok {
@@ -100,4 +112,21 @@ func (r *ResourceSliceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// Return the reconciliation result
 	return res, nil
+}
+
+// replicatedResourcesLabelSelector is an helper function which returns a label selector to list all the replicated resources.
+func replicatedResourcesLabelSelector() metav1.LabelSelector {
+	return metav1.LabelSelector{
+		MatchExpressions: []metav1.LabelSelectorRequirement{
+			{
+				Key:      consts.ReplicationOriginLabel,
+				Operator: metav1.LabelSelectorOpExists,
+			},
+			{
+				Key:      consts.ReplicationStatusLabel,
+				Operator: metav1.LabelSelectorOpIn,
+				Values:   []string{strconv.FormatBool(true)},
+			},
+		},
+	}
 }
