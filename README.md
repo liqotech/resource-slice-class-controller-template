@@ -6,7 +6,14 @@ A Kubernetes controller for managing ResourceSlice resources with customizable b
 
 The Resource Slice Classes controller is designed to manage ResourceSlice resources in a Kubernetes cluster. Each controller instance handles ResourceSlices of a specific class, allowing you to run multiple controllers with different behaviors for different classes.
 
-The controller manages the ResourceSlice status updates and conditions, while the handler is responsible for implementing the resource allocation strategy.
+The controller manages the ResourceSlice status updates, while the handler is responsible for implementing the resource allocation strategy.
+In particular the handler should:
+
+- set the list of resources allocated for that resourceslice in the status
+- set a Condition of type `Resources` to indicate if the resources have been accepted or denied.
+- return an error if it fails to process the ResourceSlice, thus the reconciliation should be retried.
+Note: it should not return an error if the resourceslice has been correctly processed,
+but the resources have been denied.
 
 ## Features
 
@@ -76,6 +83,7 @@ To implement a custom handler for your ResourceSlice class:
     func (h *MyHandler) Handle(ctx context.Context, resourceSlice *authv1beta1.ResourceSlice) (ctrl.Result, error) {
         // Implement your custom resource allocation logic here
         // Update resourceSlice.Status.Resources with your allocated resources
+        // and set the status Condition of type "Resources" accordingly
         
         return ctrl.Result{}, nil
     }
@@ -122,12 +130,12 @@ Your handler implementation should:
 
 1. Implement your resource allocation strategy
 2. Set the allocated resources in `resourceSlice.Status.Resources`
-3. Return appropriate reconciliation results and errors
+3. Set the `Resources` Condition to accept or deny the resources requested
+4. Return appropriate reconciliation results and errors
 
 Note: The controller, not the handler, is responsible for:
 
 - Updating the ResourceSlice status in the API server
-- Managing ResourceSlice conditions
 - Recording events
 - Error handling and logging
 
@@ -140,6 +148,7 @@ Note: The controller, not the handler, is responsible for:
 
 2. **Handler Implementation**:
    - Keep handlers focused on resource calculation logic
+   - Explicitly accept or deny the resources through the appropriate Condition
    - Return meaningful errors for proper event recording
    - Use logging for debugging purposes
 

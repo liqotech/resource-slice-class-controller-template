@@ -84,7 +84,13 @@ func (r *ResourceSliceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	res, err = r.handler.Handle(ctx, &resourceSlice)
 	if err != nil {
 		r.recorder.Eventf(&resourceSlice, "Warning", "Failed", "Failed to handle ResourceSlice: %v", err)
-		return ctrl.Result{}, err
+		return ctrl.Result{}, fmt.Errorf("failed to handle ResourceSlice %q: %w", req.NamespacedName, err)
+	}
+
+	// check the "Resources" condition is set.
+	resCond := authentication.GetCondition(&resourceSlice, authv1beta1.ResourceSliceConditionTypeResources)
+	if resCond == nil {
+		return ctrl.Result{}, fmt.Errorf("failed to handle ResourceSlice %q: missing \"Resources\" condition", req.NamespacedName)
 	}
 
 	defer func() {
@@ -94,21 +100,11 @@ func (r *ResourceSliceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 				klog.Error(err)
 			}
 			r.recorder.Eventf(&resourceSlice, "Warning", "Failed", "Failed to update ResourceSlice status: %v", err)
-			err = fmt.Errorf("failed to update ResourceSlice status: %w", newErr)
+			err = fmt.Errorf("failed to update ResourceSlice %q status: %w", req.NamespacedName, newErr)
+			return
 		}
+		klog.Infof("ResourceSlice %q status correctly updated", req.NamespacedName)
 	}()
-
-	// Update the conditions
-	if resourceSlice.Status.Conditions == nil {
-		resourceSlice.Status.Conditions = []authv1beta1.ResourceSliceCondition{}
-	}
-	authentication.EnsureCondition(
-		&resourceSlice,
-		authv1beta1.ResourceSliceConditionTypeResources,
-		authv1beta1.ResourceSliceConditionAccepted,
-		"ResourceSliceResourcesAccepted",
-		"ResourceSlice resources accepted",
-	)
 
 	// Return the reconciliation result
 	return res, nil

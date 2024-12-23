@@ -4,9 +4,11 @@ import (
 	"context"
 
 	authv1beta1 "github.com/liqotech/liqo/apis/authentication/v1beta1"
+	"github.com/liqotech/liqo/pkg/liqo-controller-manager/authentication"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	rshandler "github.com/liqotech/resource-slice-class-controller-template/pkg/resourceslice/handler"
 )
@@ -27,15 +29,25 @@ func NewHandler(maxResources corev1.ResourceList) rshandler.Handler {
 func (h *Handler) Handle(_ context.Context, resourceSlice *authv1beta1.ResourceSlice) (ctrl.Result, error) {
 	// Generate and update resources in status
 	resources := h.getCappedResources(resourceSlice.Spec.Resources)
-
 	resourceSlice.Status.Resources = resources
 
-	klog.InfoS("Updated ResourceSlice status",
+	klog.InfoS("Processed ResourceSlice resources",
 		"name", resourceSlice.Name,
 		"namespace", resourceSlice.Namespace,
 		"cpu", resources.Cpu().String(),
 		"memory", resources.Memory().String(),
-		"pods", resources.Pods().String())
+		"pods", resources.Pods().String(),
+		"ephemeral-storage", resources.StorageEphemeral().String())
+
+	// Ensure the "Resources" condition is set.
+	authentication.EnsureCondition(
+		resourceSlice,
+		authv1beta1.ResourceSliceConditionTypeResources,
+		authv1beta1.ResourceSliceConditionAccepted,
+		"ResourceSliceResourcesAccepted",
+		"ResourceSlice resources accepted",
+	)
+	klog.Infof("ResourceSlice %q resources condition accepted", client.ObjectKeyFromObject(resourceSlice))
 
 	return ctrl.Result{}, nil
 }
